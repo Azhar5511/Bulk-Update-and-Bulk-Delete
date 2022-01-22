@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="18ce1f13-ded7-4128-9353-2cb761cda689" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<db:config name="Database_Config" doc:name="Database Config" doc:id="d4cc3d3e-a7d3-4bcb-affe-81494b1fbc6d" >
+		<db:my-sql-connection host="localhost" port="3306" user="root" password="root" database="craft_online_shopping" />
+	</db:config>
+	<flow name="groupc-assignmetFlow" doc:id="dea54d89-9479-411d-8f55-eeee0eeb68ca" >
+		<http:listener doc:name="Listener" doc:id="ddf14e83-20bc-4570-bcc3-e73a2172cae1" config-ref="HTTP_Listener_config" path="/updateProducts"/>
+		<db:bulk-update doc:name="Bulk update" doc:id="ee0a6eea-d3e2-4286-bdec-11910d92b8a6" config-ref="Database_Config">
+			<db:bulk-input-parameters ><![CDATA[#[payload map ( value, index) -> 
+  {
+	product_Id: value.product_Id,
+	category_Id: value.category_Id,
+	product_Name: value.product_Name,
+	description: value.description,
+	video_url: value.video_url,
+	price: value.price
+}]]]></db:bulk-input-parameters>
+			<db:sql ><![CDATA[ update products 
+ set product_Id= :product_Id, category_Id= :category_Id, product_Name=:product_Name, 
+ description= :description, video_url=:video_url, price=:price 
+ where  product_Id= :product_Id;]]></db:sql>
+		</db:bulk-update>
+		<set-payload value="Succesfully Updated!" doc:name="Set Payload" doc:id="69ea15fa-f3f2-4bfb-8933-345516d5fcad" />
+	</flow>
+	<flow name="groupc-assignmetFlow1" doc:id="122dc547-42cb-4b83-81c5-21d30382c2c4" >
+		<http:listener doc:name="Listener" doc:id="5363d7bb-6a7a-4094-b606-ebd01463ba0f" config-ref="HTTP_Listener_config" path="/deleteProducts"/>
+		<db:bulk-delete doc:name="Bulk delete" doc:id="8fff53b8-f62f-4413-a053-3ffb49e83394" config-ref="Database_Config">
+			<db:bulk-input-parameters ><![CDATA[#[payload map {
+	product_Id: $.product_Id
+}]]]></db:bulk-input-parameters>
+			<db:sql ><![CDATA[delete from products where product_Id=:product_Id;]]></db:sql>
+		</db:bulk-delete>
+		<set-payload doc:name="Set Payload" doc:id="9112dffe-4690-4248-b588-f53bf417747c" value="Succesfully Deleted!"/>
+	</flow>
+</mule>
